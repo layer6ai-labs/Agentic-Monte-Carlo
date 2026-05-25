@@ -1,0 +1,38 @@
+[project]
+name = "agentenv_webshop"
+version = "0.0.1"
+description = ""
+authors = [
+    {name = "KYLN24", email = "hlguo20@fudan.edu.cn"},
+]
+dependencies = [
+    "fastapi==0.103.2",
+    "uvicorn[standard]",
+    "python-Levenshtein",
+    "requests>=2.32.4",
+    "bs4>=0.0.2",
+    "selenium>=4.27.1",
+    "cleantext>=1.1.4",
+    "rank-bm25>=0.2.2",
+    "flask>=3.0.3",
+    "pyserini>=0.22.1",
+    "torch>=2.4.1",
+    "pydantic>=2.0,<3.0",
+    "spacy==3.7.5",
+    "charset-normalizer>=3.4.4",
+    "thefuzz>=0.22.1",
+    "pip>=25.0.1",
+    "faiss-cpu>=1.8.0.post1",
+    "tqdm>=4.67.1",
+    "gym==0.24.0",
+]
+requires-python = ">=3.8,<3.9"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project.scripts]
+webshop = "agentenv_webshop:launch"
