@@ -40,48 +40,34 @@ All trajectory collection and evaluation runs go through `main.py`. Key argument
 
 ## Converting Trajectories to Training Data (`smc/traj_train_convert.py`)
 
-After collecting trajectories with `--mode train`, convert them into a HuggingFace dataset before training the value function:
+After collecting trajectories with `--mode train`, convert them into a HuggingFace dataset before training the value function. Key arguments:
 
-```
-uv run python smc/traj_train_convert.py \
-  --input   results/[trajectory_file].json \
-  --dataset [webshop|sciworld|textcraft|movie|weather] \
-  --output  data/[output_dataset_dir]
-```
-
-Key options:
-- `--history-length` — past (state, action) pairs to include in the prompt. Values used in the paper: webshop=10, sciworld=20, textcraft=20, movie=12, weather=10
-- `--gamma` — discount factor for return-to-go (default: 1.0)
-- `--valid-ratio` — fraction of trajectories held out for validation (default: 0.2)
+| Argument | Description |
+|---|---|
+| `--input` | Path to the trajectory JSON file produced by `main.py --mode train` |
+| `--dataset` | Environment: `webshop`, `sciworld`, `textcraft`, `movie`, `weather` |
+| `--output` | Output directory for the HuggingFace dataset |
+| `--history-length` | Past (state, action) pairs to include in the prompt. Paper values: webshop=10, sciworld=20, textcraft=20, movie=12, weather=10 |
+| `--gamma` | Discount factor for return-to-go (default: 1.0) |
+| `--valid-ratio` | Fraction of trajectories held out for validation (default: 0.2) |
 
 
 ---
 
 ## Training the Value Function (`smc/train_lora_regression.py`)
 
-Train a LoRA + regression head on the converted dataset. Run from the repo root with:
+Train a LoRA + regression head on the converted dataset. Key arguments:
 
-```
-torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
-  --model_name      <base_model> \
-  --input_dir       <converted_dataset_dir> \
-  --output_dir      <checkpoint_output_dir> \
-  --num_train_epochs 3 \
-  --per_device_train_batch_size 2 \
-  --per_device_eval_batch_size 2 \
-  --gradient_accumulation_steps 16 \
-  --target_modules q_proj k_proj v_proj o_proj gate_proj up_proj down_proj \
-  --gradient_checkpointing \
-  --max_grad_norm 1 \
-  --loss_function mse
-```
-
-Additional options:
-```
-  --early_stopping_patience 1 \
-  --metric_for_best_model pearsonr_y \
-  --loss_weight [Ratio of samples with reward > 0 to samples with reward <= 0 in the training data]
-```
+| Argument | Description |
+|---|---|
+| `--model_name` | Base model to fine-tune (HuggingFace path) |
+| `--input_dir` | Converted dataset directory (output of `traj_train_convert.py`) |
+| `--output_dir` | Directory to save the trained checkpoint |
+| `--num_train_epochs` | Number of training epochs (default: 3) |
+| `--loss_function` | `mse` (default) or `bce` |
+| `--early_stopping_patience` | Stop after N evals without improvement (optional) |
+| `--metric_for_best_model` | Metric to track for early stopping, e.g. `pearsonr_y` (optional) |
+| `--loss_weight` | Ratio of positive to negative reward samples — Control the exponential weighting in loss (optional) |
 
 Run `mlflow server --port 8080` to track training progress where the `mlruns` folder is located.
 

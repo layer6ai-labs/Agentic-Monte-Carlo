@@ -1,15 +1,10 @@
 import abc
-import asyncio
 import copy
 import logging
 from typing import Any, List
 
 from smc.clients import AgentGymClient
 from smc.utils.action_utils import NO_ACTION, ActionParserError, parse_action
-
-# Assume 'State' is a defined type or class
-# from your_state_module import State
-
 
 class Agent(abc.ABC):
     def __init__(self) -> None:
@@ -174,73 +169,3 @@ class AgentGymAgent(Agent):
 
         return new_agent
 
-class OracleAgent(AgentGymAgent):
-    """
-    An agent that overrides the value function with a
-    Monte Carlo rollout to get the "true" value of its current state.
-    """
-    
-    def __init__(self, client: AgentGymClient, task_idx, system_prompt, model, value_function, max_steps, num_rollouts):  
-        self.max_steps = max_steps
-        self.oracle_rollouts = num_rollouts
-        super().__init__(client, task_idx, system_prompt, model, value_function)
-
-    async def _run_rollout(self) -> float:
-        """
-        clones the agent's current state and runs a simulation to the end
-        using the policy model.
-        """
-
-        cloned_agent = self.clone()
-                
-        current_step = len(cloned_agent.action_history)
-                
-        while current_step < self.max_steps and not cloned_agent.terminal:
-            await cloned_agent.step(cloned_agent.state)
-            current_step += 1                 
-
-        return cloned_agent.cumulative_reward
-
-    async def evaluate_state(self, state: Any) -> float:
-        
-        self.logger.info(f"Task {self.task_idx}: OracleAgent (particle) starting {self.oracle_rollouts} rollouts...")
-                
-        rollout_tasks = [self._run_rollout() for _ in range(self.oracle_rollouts)]                
-        all_rewards = await asyncio.gather(*rollout_tasks)                
-        avg_reward = sum(all_rewards) / len(all_rewards) if all_rewards else 0.0
-        
-        self.logger.info(f"Task {self.task_idx}: Oracle rollouts complete. Avg reward: {avg_reward:.4f}")
-                
-        return avg_reward + 1e-9
-
-    def clone(self) -> "OracleAgent":
-        """
-        clone by creating a new environment client and replaying
-        the action history to sync its state.
-        """
-        new_client = self.client
-        new_client.reset(data_idx=self.task_idx)
-        
-        for action in self.action_history:
-            new_client.step(action)
-
-        new_agent = self.__class__(
-            client=new_client,
-            task_idx = self.task_idx,
-            system_prompt = self.system_prompt,
-            model = self.model,
-            value_function = self.value_function,
-            max_steps = self.max_steps,
-            num_rollouts = self.oracle_rollouts
-        )
-
-        # copy the rest of the agent's state
-        new_agent.conversation = copy.deepcopy(self.conversation)
-        new_agent.cumulative_reward = self.cumulative_reward
-        new_agent.terminal = self.terminal
-        new_agent.action_history = copy.deepcopy(self.action_history)
-        new_agent.value_at_last_resample = self.value_at_last_resample
-        new_agent.reward_at_last_resample = self.reward_at_last_resample
-        new_agent.terminal_updated = self.terminal_updated
-
-        return new_agent

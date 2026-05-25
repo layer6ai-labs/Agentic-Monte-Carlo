@@ -22,7 +22,7 @@ from smc.agents.webshop import WebshopAgent
 from smc.agents.movie import MovieAgent
 from smc.agents.weather import WeatherAgent
 from smc.clients import CustomTextCraftTask
-from smc.agents.agent import AgentGymAgent, OracleAgent
+from smc.agents.agent import AgentGymAgent
 from smc.smc import run_smc_for_task
 from smc.policy import APIModel, LocalModel, PolicyModel
 from smc.utils.logging_utils import setup_logging
@@ -53,10 +53,8 @@ class Args(argparse.Namespace):
     ess_threshold: float
     weight_temperature: float
     policy_prompt: str
-    oracle_rollouts: int
     mode: str
     tasks: Optional[list[int]]
-    output_suffix: str
 
 def parse_arguments() -> Args:    
     parser = argparse.ArgumentParser(
@@ -144,7 +142,6 @@ def parse_arguments() -> Args:
         default=36001,
         help="Port for the AgentGym environment server.",
     )
-
     parser.add_argument(
         '--vf-as-generator',
         action='store_true',
@@ -175,12 +172,6 @@ def parse_arguments() -> Args:
         help="Policy prompt for the agent."
     )
     parser.add_argument(
-        '--oracle-rollouts',
-        type=int,
-        default=5,
-        help="Number of rollouts for the OracleAgent."
-    )
-    parser.add_argument(
         '--mode',
         type=str,
         default="test",
@@ -194,13 +185,6 @@ def parse_arguments() -> Args:
         default=None,
         help="A list of tasks to run smc on"
     )
-    parser.add_argument(
-        '--output-suffix',
-        type=str,
-        default="",
-        help="Suffix to attach to the output file"
-    )
-
     return parser.parse_args(namespace=Args())
 
 def main():
@@ -341,158 +325,75 @@ def main():
 
     ### Prepare the correct environment ###
 
-    if args.env == "webshop":
-        task_class = WebshopTask
-        client_args = {
-            "env_server_base": f"http://127.0.0.1:{args.port}",
-            "data_len": 200,
-            "timeout": 500,
-            "action_format": args.policy_prompt,
-        }
-        agent_class = WebshopAgent
-        agent_kwargs = {
-            "model": policy_model,
-            "client_args": client_args,
-            "value_function": value_function,
-            "policy_prompt": WEBSHOP_REACT_PROMPT,
-            "action_format": args.policy_prompt,
-        }
+    # Per-environment config for the four "standard" envs that share the same structure.
+    # TextCraft is handled separately below (different client/agent interface).
+    STANDARD_ENV_CONFIGS = {
+        "webshop":  dict(task_class=WebshopTask,  agent_class=WebshopAgent,
+                         policy_prompt=WEBSHOP_REACT_PROMPT,
+                         test_idx="webshop_idx/test_idx.json",
+                         train_idx="webshop_idx/train_idx.json",
+                         force_buy=True),
+        "sciworld": dict(task_class=SciworldTask, agent_class=SciworldAgent,
+                         policy_prompt=SCIWORLD_REACT_PROMPT if args.policy_prompt == "react" else SCIWORLD_REFLACT_PROMPT,
+                         test_idx="sciworld_idx/sciworld_test_idx.json",
+                         train_idx="sciworld_idx/sciworld_train_idx.json",
+                         force_buy=False),
+        "movie":    dict(task_class=MovieTask,    agent_class=MovieAgent,
+                         policy_prompt=MOVIE_REACT_PROMPT,
+                         test_idx="movie_idx/test_idx.json",
+                         train_idx="movie_idx/train_idx.json",
+                         force_buy=False),
+        "weather":  dict(task_class=WeatherTask,  agent_class=WeatherAgent,
+                         policy_prompt=WEATHER_REACT_PROMPT,
+                         test_idx="weather_idx/test_idx.json",
+                         train_idx="weather_idx/train_idx.json",
+                         force_buy=False),
+    }
 
-        args.force_buy_on_extra_step = True
-
-        if args.tasks:
-            task_ids = args.tasks
-        elif args.mode == "test":
-            with open("webshop_idx/test_idx.json", "r") as f:
-                task_ids = json.load(f)
-            logger.info(f"Test mode. Sample size: {len(task_ids)}")
-        else:
-            with open("webshop_idx/train_idx.json", "r") as f:
-                task_ids = json.load(f)
-            logger.info(f"Train mode. Sample size: {len(task_ids)}")
-
-    elif args.env == "sciworld":
-        task_class = SciworldTask
-        client_args = {
-            "env_server_base": f"http://127.0.0.1:{args.port}",
-            "data_len": 200,
-            "timeout": 500,
-            "action_format": args.policy_prompt,
-        }
-        agent_class = SciworldAgent
-        agent_kwargs = {
-            "model": policy_model,
-            "client_args": client_args,
-            "value_function": value_function,
-            "policy_prompt": SCIWORLD_REACT_PROMPT if args.policy_prompt=="react" else SCIWORLD_REFLACT_PROMPT,
-            "action_format": args.policy_prompt,
-        }
-
-        if args.tasks:
-            task_ids = args.tasks
-        elif args.mode == "test":
-            with open("sciworld_idx/sciworld_test_idx.json", "r") as f:
-                task_ids = json.load(f)
-            logger.info(f"Test mode. Sample size: {len(task_ids)}")
-        else:            
-            with open("sciworld_idx/sciworld_train_idx.json", "r") as f:
-                task_ids = json.load(f)
-            logger.info(f"Train mode. Sample size: {len(task_ids)}")
-
-    elif args.env == "textcraft":
+    if args.env == "textcraft":
         task_class = CustomTextCraftTask
-        client_args = {
-            "base_url": f"http://127.0.0.1:{args.port}",
-            "timeout": 500,
+        client_args = {"base_url": f"http://127.0.0.1:{args.port}", "timeout": 500}
+        agent_class = AgentGymAgent
+        agent_kwargs = {
+            "model": policy_model,
+            "value_function": value_function,
+            "system_prompt": TEXTCRAFT_REACT_PROMPT,
         }
-
-        if args.mode == "train":
-            agent_class = OracleAgent
-            agent_kwargs = {
-                "model": policy_model,
-                "value_function": value_function,
-                "system_prompt": TEXTCRAFT_REACT_PROMPT,
-                "max_steps": args.max_steps,
-                "num_rollouts": args.oracle_rollouts
-            }
-        else:
-            agent_class = AgentGymAgent
-            agent_kwargs = {
-                "model": policy_model,
-                "value_function": value_function,
-                "system_prompt": TEXTCRAFT_REACT_PROMPT,
-            }
         args.force_buy_on_extra_step = False
         args.caching = True
-
         if args.tasks:
             task_ids = args.tasks
-        elif args.mode == "test":
-            with open("textcraft_idx/textcraft_test_ids.csv", "r") as f:
+        else:
+            idx_file = "textcraft_idx/textcraft_test_ids.csv" if args.mode == "test" else "textcraft_idx/textcraft_train_ids.csv"
+            with open(idx_file) as f:
                 task_ids = f.read().splitlines()
-            logger.info(f"Test mode. Sample size: {len(task_ids)}")
-        else:            
-            with open("textcraft_idx/textcraft_train_ids.csv", "r") as f:
-                task_ids = f.read().splitlines()
-            logger.info(f"Train mode. Sample size: {len(task_ids)}")
+            logger.info(f"{'Test' if args.mode == 'test' else 'Train'} mode. Sample size: {len(task_ids)}")
 
-    elif args.env == "movie":
-        task_class = MovieTask
+    elif args.env in STANDARD_ENV_CONFIGS:
+        cfg = STANDARD_ENV_CONFIGS[args.env]
+        task_class = cfg["task_class"]
         client_args = {
             "env_server_base": f"http://127.0.0.1:{args.port}",
             "data_len": 200,
             "timeout": 500,
             "action_format": args.policy_prompt,
         }
-        agent_class = MovieAgent
+        agent_class = cfg["agent_class"]
         agent_kwargs = {
             "model": policy_model,
             "client_args": client_args,
             "value_function": value_function,
-            "policy_prompt": MOVIE_REACT_PROMPT,
+            "policy_prompt": cfg["policy_prompt"],
             "action_format": args.policy_prompt,
         }
-        args.force_buy_on_extra_step = False
-
+        args.force_buy_on_extra_step = cfg["force_buy"]
         if args.tasks:
             task_ids = args.tasks
-        elif args.mode == "test":
-            with open("movie_idx/test_idx.json", "r") as f:
-                task_ids = json.load(f)
-            logger.info(f"Test mode. Sample size: {len(task_ids)}")
         else:
-            with open("movie_idx/train_idx.json", "r") as f:
+            idx_file = cfg["test_idx"] if args.mode == "test" else cfg["train_idx"]
+            with open(idx_file) as f:
                 task_ids = json.load(f)
-            logger.info(f"Train mode. Sample size: {len(task_ids)}")
-
-    elif args.env == "weather":
-        task_class = WeatherTask
-        client_args = {
-            "env_server_base": f"http://127.0.0.1:{args.port}",
-            "data_len": 200,
-            "timeout": 500,
-            "action_format": args.policy_prompt,
-        }
-        agent_class = WeatherAgent
-        agent_kwargs = {
-            "model": policy_model,
-            "client_args": client_args,
-            "value_function": value_function,
-            "policy_prompt": WEATHER_REACT_PROMPT,
-            "action_format": args.policy_prompt,
-        }
-        args.force_buy_on_extra_step = False
-
-        if args.tasks:
-            task_ids = args.tasks
-        elif args.mode == "test":
-            with open("weather_idx/test_idx.json", "r") as f:
-                task_ids = json.load(f)
-            logger.info(f"Test mode. Sample size: {len(task_ids)}")
-        else:
-            with open("weather_idx/train_idx.json", "r") as f:
-                task_ids = json.load(f)
-            logger.info(f"Train mode. Sample size: {len(task_ids)}")
+            logger.info(f"{'Test' if args.mode == 'test' else 'Train'} mode. Sample size: {len(task_ids)}")
 
     else:
         logger.error(f"Environment {args.env} not supported.")
@@ -504,7 +405,7 @@ def main():
     
     results_filename = os.path.join(
         results_dir, 
-        f"{args.env}_{policy_model_name}-{value_model_name}_{args.output_suffix}_{timestamp}.json"
+        f"{args.env}_{policy_model_name}-{value_model_name}_{timestamp}.json"
     )
 
     ### Starting experiment ###
