@@ -1,5 +1,9 @@
 # Agentic Monte Carlo: Simulating Reinforcement Learning for Black-Box Agents
 
+[![ICML 2026](https://img.shields.io/badge/ICML-2026-blue.svg)](https://icml.cc/virtual/2026/poster/62740)  [![Paper](https://img.shields.io/badge/Paper-arXiv-red.svg)](#)  <!-- TODO: replace # with arXiv link -->
+
+---
+
 ### Initializing
 1. Install uv https://docs.astral.sh/uv/getting-started/installation/. See the `uv` primer below for details on how to use it.
 
@@ -276,25 +280,30 @@ uv run python main.py --env textcraft --mode test --n-particles 15 --max-steps 2
 
 Movie and Weather environments are both served from the `agentenv-tool` package. Set it up once and use it for both.
 
-1. Obtain a TMDB API key at https://developer.themoviedb.org/docs/getting-started, then set it in `envs/AgentGym/agentenv-tool/setup.sh`:
-```
-export MOVIE_KEY="your_tmdb_api_key"
-```
+1. Obtain a TMDB **API Read Access Token** at https://developer.themoviedb.org/docs/getting-started. On the TMDB API settings page, use the **"API Read Access Token"**, not the shorter "API Key".
 
 2. Set up the tool environment (requires conda):
 ```
-conda create --name agentenv-tool python=3.8
+conda create --name agentenv-tool python=3.8.13
 conda activate agentenv-tool
 cd envs/AgentGym/agentenv-tool/
 source ./setup.sh
 ```
 
-3. Run the movie environment:
+3. Create a `.env` file with your token:
+```
+echo 'MOVIE_KEY=your_tmdb_read_access_token' > envs/AgentGym/agentenv-tool/.env
+```
+
+4. Run the movie environment:
 ```
 conda activate agentenv-tool
 cd envs/AgentGym/agentenv-tool/
+unset MOVIE_KEY
 movie --host 0.0.0.0 --port 36001
 ```
+
+> **Note:** `source ./setup.sh` sets `MOVIE_KEY=""` in the shell, which prevents `load_dotenv()` from reading the `.env` file. Running `unset MOVIE_KEY` before starting the server lets `load_dotenv()` pick up the token from `.env`.
 
 4. Generate training trajectories:
 ```
@@ -402,6 +411,24 @@ AMC (ReAct):
 uv run python main.py --env weather --mode test --n-particles 15 --max-steps 10 --resample-steps 4 --model-path meta-llama/Llama-3.2-11B-Vision-Instruct --vf-ckpt-path [Trained Value Function CKPT] --vf-base-model meta-llama/Llama-3.2-11B-Vision-Instruct --template_version WEATHER --port 36001
 ```
 
+
+---
+
+## Citation
+
+If you find this work useful, please cite our paper:
+
+```bibtex
+@inproceedings{TODO,
+  title     = {Agentic Monte Carlo: Simulating Reinforcement Learning for Black-Box Agents},
+  author    = {TODO},
+  booktitle = {Proceedings of the 43rd International Conference on Machine Learning (ICML)},
+  year      = {2026},
+  url       = {TODO},
+}
+```
+
+<!-- TODO: fill in author list and url once the camera-ready / proceedings link is available -->
 
 ---
 

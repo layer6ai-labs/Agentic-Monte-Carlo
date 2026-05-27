@@ -28,6 +28,10 @@ data/
 checkpoints/
 mlruns/
 
+# MLflow
+mlflow.db
+mlruns/
+
 # Logs
 *.log
 logs/
