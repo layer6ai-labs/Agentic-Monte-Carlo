@@ -7,7 +7,6 @@ import pandas as pd
 from datasets import Dataset, DatasetDict
 
 
-
 PREAMBLES = {
     "webshop": (
         "You are a value estimator for a web shopping task.\n"
@@ -231,7 +230,7 @@ def build_value_prompts(
                     state_i, _ = _extract_crafting_goal(stripped[i])
                 else:
                     state_i = stripped[i]
-                action_i = actions_taken[i] if actions_taken[i] else "(unknown)"
+                action_i = actions_taken[i] if i < len(actions_taken) and actions_taken[i] else "(unknown)"
                 parts.append(f"Round {i + 1} — STATE:\n{state_i}")
                 parts.append(f"Round {i + 1} — ACTION:\n{action_i}")
 
@@ -275,14 +274,21 @@ def parse_trajectory(df: pd.DataFrame, dataset: str) -> pd.DataFrame:
         lambda conv: [_extract_action(msg["value"]) for msg in conv if msg["from"] == "gpt"][1:]
     )
 
+    # For webshop: force_buy_on_extra_step appends a final human observation with no
+    # corresponding gpt action. Drop any trailing states beyond len(action_split) + 1
+    # so that every state in state_split has an associated action (or is the initial state).
+    if dataset == "webshop":
+        df["state_split"] = df.apply(
+            lambda row: row["state_split"][:len(row["action_split"]) + 1], axis=1
+        )
+
     # reward_split: per-step rewards where available, else final reward only
     if dataset == "webshop":
-        # no per-step rewards in conversation; use sparse final reward
+        # no per-step rewards; sparse final reward at the last step
         df["reward_split"] = df.apply(
             lambda row: [0.0] * (len(row["action_split"]) - 1) + [row["reward"]], axis=1
         )
     elif dataset == "textcraft":
-        ## @Raunaq please update this
         df["reward_split"] = df.apply(
             lambda row: [0.0] * (len(row["action_split"]) - 1) + [row["reward"]], axis=1
         )

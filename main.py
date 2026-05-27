@@ -82,9 +82,9 @@ def parse_arguments() -> Args:
     parser.add_argument(
         '--resample-steps',
         type=int,
-        nargs='+', # This tells argparse to accept one or more numbers
-        default=40,
-        help="A list of steps to resample at (e.g., --resample-steps 10 12 14)."
+        nargs='+',
+        default=[40],
+        help="A list of steps to resample at (e.g., --resample-steps 6 8 10). Omit to use adaptive ESS resampling."
     )    
     parser.add_argument(
         "--model-path",
@@ -473,9 +473,10 @@ def main():
         logger.info(f"Task {result['task_id']}: Best Reward = {best_reward_for_task:.2f} | Time = {task_time:.2f}s")
         total_best_reward += best_reward_for_task
 
-    avg_reward = total_best_reward / len(results) if results else 0
+    avg_reward = total_best_reward / len(results) if results else 0    
     logger.info(f"\nAverage Best Reward Across All Tasks: {avg_reward:.4f}")
     logger.info(f"Total Experiment Time: {total_time:.2f}s")
+    print(f"\nAverage Best Reward Across All Tasks: {avg_reward:.4f}")    
 
 
 if __name__ == "__main__":

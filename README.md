@@ -69,7 +69,7 @@ Train a LoRA + regression head on the converted dataset. Key arguments:
 | `--metric_for_best_model` | Metric to track for early stopping, e.g. `pearsonr_y` (optional) |
 | `--loss_weight` | Ratio of positive to negative reward samples — Control the exponential weighting in loss (optional) |
 
-Run `mlflow server --port 8080` to track training progress where the `mlruns` folder is located.
+Run `mlflow server --backend-store-uri ./mlruns --port 8080` from the repo root to track training progress.
 
 
 ---
@@ -80,9 +80,8 @@ Setup is handled by `./scripts/setup.sh`.
 
 1. Run the webshop environment:
 ```
-conda activate agentenv-webshop
 cd envs/AgentGym/agentenv-webshop/
-webshop --host 0.0.0.0 --port 36001
+uv run webshop --host 0.0.0.0 --port 36001
 ```
 
 2. Generate training trajectories:
@@ -94,7 +93,7 @@ uv run python main.py --env webshop --mode train --n-particles 3 --max-steps 10 
 uv run python smc/traj_train_convert.py --input results/[trajectory_file].json --dataset webshop --history-length 10 --output data/webshop-train-value
 ```
 ```
-torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
+uv run torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
   --model_name meta-llama/Llama-3.2-11B-Vision-Instruct \
   --input_dir  data/webshop-train-value \
   --output_dir checkpoints/webshop-vf \
@@ -165,7 +164,7 @@ uv run python main.py --env sciworld --mode train --n-particles 3 --max-steps 20
 uv run python smc/traj_train_convert.py --input results/[trajectory_file].json --dataset sciworld --history-length 20 --output data/sciworld-train-value
 ```
 ```
-torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
+uv run torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
   --model_name meta-llama/Llama-3.1-8B-Instruct \
   --input_dir  data/sciworld-train-value \
   --output_dir checkpoints/sciworld-vf \
@@ -236,7 +235,7 @@ uv run python main.py --env textcraft --mode train --n-particles 8 --max-steps 2
 uv run python smc/traj_train_convert.py --input results/[trajectory_file].json --dataset textcraft --history-length 20 --output data/textcraft-train-value
 ```
 ```
-torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
+uv run torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
   --model_name meta-llama/Llama-3.2-11B-Vision-Instruct \
   --input_dir  data/textcraft-train-value \
   --output_dir checkpoints/textcraft-vf \
@@ -307,7 +306,7 @@ uv run python main.py --env movie --mode train --n-particles 3 --max-steps 12 --
 uv run python smc/traj_train_convert.py --input results/[trajectory_file].json --dataset movie --history-length 12 --output data/movie-train-value
 ```
 ```
-torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
+uv run torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
   --model_name meta-llama/Llama-3.2-11B-Vision-Instruct \
   --input_dir  data/movie-train-value \
   --output_dir checkpoints/movie-vf \
@@ -367,7 +366,7 @@ uv run python main.py --env weather --mode train --n-particles 3 --max-steps 10 
 uv run python smc/traj_train_convert.py --input results/[trajectory_file].json --dataset weather --history-length 10 --output data/weather-train-value
 ```
 ```
-torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
+uv run torchrun --nproc_per_node=<N_GPUS> smc/train_lora_regression.py \
   --model_name meta-llama/Llama-3.2-11B-Vision-Instruct \
   --input_dir  data/weather-train-value \
   --output_dir checkpoints/weather-vf \

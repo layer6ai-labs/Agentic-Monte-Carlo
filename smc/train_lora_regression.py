@@ -286,7 +286,8 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(SEED)
         
-    # mlflow
+    # mlflow — use file-based store (avoids SQLite schema conflicts)
+    mlflow.set_tracking_uri("./mlruns")
     mlflow.set_experiment(args.output_dir)
     mlflow.start_run()
 
