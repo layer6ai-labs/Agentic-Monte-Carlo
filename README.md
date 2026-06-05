@@ -1,6 +1,6 @@
 # Agentic Monte Carlo: Simulating Reinforcement Learning for Black-Box Agents
 
-[![ICML 2026](https://img.shields.io/badge/ICML-2026-blue.svg)](https://icml.cc/virtual/2026/poster/62740)  [![Paper](https://img.shields.io/badge/Paper-arXiv-red.svg)](#)  <!-- TODO: replace # with arXiv link -->
+[![ICML 2026](https://img.shields.io/badge/ICML-2026-blue.svg)](https://icml.cc/virtual/2026/poster/62740)  [![Paper](https://img.shields.io/badge/Paper-arXiv-red.svg)](https://arxiv.org/abs/2606.05296)  <!-- TODO: replace # with arXiv link -->
 
 ---
 
