@@ -419,12 +419,14 @@ uv run python main.py --env weather --mode test --n-particles 15 --max-steps 10 
 If you find this work useful, please cite our paper:
 
 ```bibtex
-@inproceedings{TODO,
-  title     = {Agentic Monte Carlo: Simulating Reinforcement Learning for Black-Box Agents},
-  author    = {TODO},
-  booktitle = {Proceedings of the 43rd International Conference on Machine Learning (ICML)},
-  year      = {2026},
-  url       = {TODO},
+@misc{hwang2026agenticmontecarlosimulating,
+      title={Agentic Monte Carlo: Simulating Reinforcement Learning for Black-Box Agents}, 
+      author={Dae Yon Hwang and Raunaq Suri and Valentin Villecroze and Anthony L. Caterini and Jesse C. Cresswell and Noël Vouitsis and Brendan Leigh Ross},
+      year={2026},
+      eprint={2606.05296},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2606.05296}, 
 }
 ```
 
