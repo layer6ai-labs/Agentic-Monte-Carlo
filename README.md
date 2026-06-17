@@ -1,6 +1,10 @@
+<p align="center">
+<a href="https://layer6.ai/"><img src="https://github.com/layer6ai-labs/DropoutNet/blob/master/logs/logobox.jpg" width="180"></a>
+</p>
+
 # Agentic Monte Carlo: Simulating Reinforcement Learning for Black-Box Agents
 
-[![ICML 2026](https://img.shields.io/badge/ICML-2026-blue.svg)](https://icml.cc/virtual/2026/poster/62740)  [![Paper](https://img.shields.io/badge/Paper-arXiv-red.svg)](https://arxiv.org/abs/2606.05296)  <!-- TODO: replace # with arXiv link -->
+[![ICML 2026](https://img.shields.io/badge/ICML-2026-blue.svg)](https://icml.cc/virtual/2026/poster/62740)  [![Paper](https://img.shields.io/badge/Paper-arXiv-red.svg)](https://arxiv.org/abs/2606.05296)
 
 ---
 
@@ -419,18 +423,18 @@ uv run python main.py --env weather --mode test --n-particles 15 --max-steps 10 
 If you find this work useful, please cite our paper:
 
 ```bibtex
-@misc{hwang2026agenticmontecarlosimulating,
-      title={Agentic Monte Carlo: Simulating Reinforcement Learning for Black-Box Agents}, 
-      author={Dae Yon Hwang and Raunaq Suri and Valentin Villecroze and Anthony L. Caterini and Jesse C. Cresswell and Noël Vouitsis and Brendan Leigh Ross},
-      year={2026},
-      eprint={2606.05296},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2606.05296}, 
+@InProceedings{hwang2026amc,
+  title = {Agentic Monte Carlo: Simulating Reinforcement Learning for Black-Box Agents},
+  author = {Dae Yon Hwang and Raunaq Suri and Valentin Villecroze and Anthony L. Caterini and Jesse C. Cresswell and Noël Vouitsis and Brendan Leigh Ross},
+  booktitle = {Proceedings of the 43rd International Conference on Machine Learning},
+  year = {2026},
+  series = {Proceedings of Machine Learning Research},
+  publisher = {PMLR},
 }
 ```
+## License
 
-<!-- TODO: fill in author list and url once the camera-ready / proceedings link is available -->
+This data and code is licensed under the Apache License 2.0, copyright by Layer 6 AI.
 
 ---
 
